@@ -8,10 +8,9 @@
             "name": "Python: interface.py",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/interface.py",
+            "program": "${workspaceFolder}/python/interface.py",
             "console": "integratedTerminal",
             "justMyCode": true
         },
-
     ]
 }

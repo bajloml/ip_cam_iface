@@ -1,1 +1,1 @@
-# IP_cam_iface
+# IP camera interface written in Python and in Rust

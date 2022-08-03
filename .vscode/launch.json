@@ -12,5 +12,29 @@
             "console": "integratedTerminal",
             "justMyCode": true
         },
+
+        {   
+            "name": "Rust: interface.rs",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/rust/interface/target/debug/interface",
+            "cwd": "${workspaceFolder}/rust/interface/",
+            // "cargo": {
+            //     "args": [
+            //         "build",
+            //         "--bin=interface",
+            //         "--package=interface"
+            //     ],
+            //     "filter": {
+            //         "name": "interface",
+            //         "kind": "bin"
+            //     }
+            // },
+            "args": [
+                // "user_arg1",
+                // "user_arg2"
+            ],
+            "preLaunchTask": "rust: cargo build interface",
+        },
     ]
 }

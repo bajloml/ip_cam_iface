@@ -2,12 +2,14 @@
 //     println!("Hello, world!");
 // }
 
+//use image::DynamicImage;
+//use image::{self, GenericImageView};
 use thirtyfour::prelude::*;
-//use image::io::Reader as ImageReader;
-use image::{DynamicImage, GrayImage, RgbImage, io::Reader as ImageReader};
+//use show_image::event;
 use reqwest;
-use show_image::{ImageView, ImageInfo, create_window};
+use opencv::{ self as cv, highgui, prelude::*, videoio, Result};
 
+//#[show_image::main]
 #[tokio::main]
 // async fn main() -> WebDriverResult<()> {
     async fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{  
@@ -59,23 +61,32 @@ use show_image::{ImageView, ImageInfo, create_window};
     /* go to image page */
     //driver.goto(format!("http://192.168.8.155/jpg/{}{}", img_name, ".jpg")).await?;
     //let client = reqwest::Client::new();
-    let img_bytes =  reqwest::get(format!("http://192.168.8.155/jpg/{}{}", img_name, ".jpg"))
-                            .await?.
-                            bytes()
-                            .await?;
 
-    let img = image::load_from_memory(&img_bytes)?;
-
-    // /* test */
-    let image = ImageView::new(ImageInfo::rgb8(1920, 1080), img.as_bytes());
-    // /* end test */
-
-    // // Create a window with default options and display the image.
-    let window = create_window("image", Default::default())?;
-    window.set_image("image-001", image)?;
-   
     // Always explicitly close the browser.
     driver.quit().await?;
 
+    // Create a window with default options and display the image.
+    //let window = show_image::create_window("image", Default::default())?;
+
+    loop{
+        let img_bytes =  reqwest::get(format!("http://192.168.8.155/jpg/{}{}", img_name, ".jpg"))
+                                .await?.
+                                bytes()
+                                .await?;
+
+        let img = image::load_from_memory(&img_bytes)?;
+        img.save(format!("{}{}", img_name, ".jpg"))?;
+        let test = img.as_bytes();
+
+        let img_mat = cv::imgcodecs::imdecode(img.as_bytes(), cv::imgcodecs::IMREAD_COLOR);
+        
+        cv::highgui::imshow("image", img_mat);
+
+        std::thread::sleep(std::time::Duration::from_millis(10));
+
+    }
+
+    println!("finished");
+   
     Ok(())
 }

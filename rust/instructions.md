@@ -6,6 +6,10 @@
     ```[dependencies]```
     ```tokio = {version = "1", features = ["full"]}```
     ```thirtyfour = "0.30.0"```
+-   run ```sudo sysctl dev.i915.perf_stream_paranoid=0```
+-   run ```sudo apt-get install llvm-dev libopencv-dev```
+-   run ```sudo apt-get install libclang-dev```
+-   run ```sudo apt-get install clang-12 --install-suggests```
 -   run ```cargo build```to build application/package
 -   run ```cargo run``` to run the application 
 

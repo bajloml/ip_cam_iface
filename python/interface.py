@@ -63,6 +63,8 @@ driver.find_element(By.XPATH, "/html/body/form/table/tbody/tr/td/table/tbody/tr/
 # close driver 
 driver.close()
 
+counter = 0
+
 # open image url
 while True:
     req = urllib.request.urlopen("http://192.168.8.155/jpg/" + img_name +".jpg")
@@ -71,4 +73,7 @@ while True:
 
     cv2.imshow(img_name, opencvImage)
     cv2.waitKey(10)
+
+    counter += 1
+    print("counter = " + str(counter))
 

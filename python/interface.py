@@ -12,7 +12,7 @@ import urllib.request
 
 from PIL import Image
 import requests
-from io import BytesIO
+from io import BytesIOby
 
 # credentials
 username = "admin"

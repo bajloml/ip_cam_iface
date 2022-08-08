@@ -74,7 +74,7 @@ use ndarray::{Array1, ArrayView1, ArrayView3};
     // Create a window with default options and display the image.
     //let window = show_image::create_window("image", Default::default())?;
 
-    let mut counter = 0;
+    let mut counter = 0 as u32;
 
     loop{
         let img_bytes =  reqwest::get(format!("http://192.168.8.155/jpg/{}{}", img_name, ".jpg"))
@@ -82,26 +82,37 @@ use ndarray::{Array1, ArrayView1, ArrayView3};
                                 bytes()
                                 .await?;
 
-        println!("img_bytes = ");
-        for i in 0..img_bytes.len(){
-            print!("{}, ", img_bytes[i]);
-        }
-        println!(" ");
+        // println!("img_bytes = ");
+        // for i in 0..img_bytes.len(){
+        //     print!("{}, ", img_bytes[i]);
+        // }
+        // println!(" ");
+        // let u128_slice: &mut [u128] = bytemuck::cast_slice_mut(&img_bytes);
+        let test: &[u8]= bytemuck::cast_slice(img_bytes.as_ref());
 
         let img = image::load_from_memory(img_bytes.as_ref())?;
-        //img.save(format!("{}{}", img_name, ".jpg"))?;
+        let test = img.as_rgb8().unwrap().as_raw().to_vec();
+
+        // img.save(format!("{}{}", img_name, ".jpg"))?;
         // let test = img.as_bytes();
 
-        // let img_arr = ndarray::ArrayView3::from_shape_vec((img.width() as usize, img.height() as usize, 3), img_bytes.as_ref());
+        // let img_arr = ndarray::ArrayView3::from_shape_vec((img.width() as usize, img.height() as usize), 
+        //                                                                                             img.as_rgb8().unwrap().as_raw().to_vec())?;
         // let img_arr = ndarray::ArrayView3::from_shape((img.width() as usize, img.height() as usize, 3), img.as_bytes());
         //let img_arr = ndarray::ArrayView3::from_shape((640, 480, 3), &img_bytes);
         // let test = img_arr.unwrap().as_slice();
 
         let mut img_mat = cv::core::Mat::default();
+
+        let na_mat = nalgebra::DMatrix::from_vec(img.height() as usize * img.width() as usize * 3, 0, test);
+        //let cv_mat: cv::core::Mat = na_mat.try_into_cv()?;
+
+
+        // let img_mat = cv::core::Mat::from_buffer(img.width(), img.height(), CvType::Cv8UC3 as i32, &test);
         // unsafe {img_mat.create_rows_cols(480, 640, 0)?};
         // unsafe {img_mat.create_rows_cols(480, 640, opencv::imgproc::COLOR_BGR2RGBA)?};
         // unsafe {img_mat.create_rows_cols(img.height() as i32, img.width() as i32, opencv::imgproc::COLOR_BGR2RGBA)?};
-        //unsafe {img_mat.cre (img.height() as i32, img.width() as i32, opencv::imgproc::COLOR_BGR2RGBA)?};
+        // unsafe {img_mat.cre (img.height() as i32, img.width() as i32, opencv::imgproc::COLOR_BGR2RGBA)?};
         // unsafe {cv::core::Mat::new_rows_cols_with_data( img.height() as i32,
         //                                                 img.width() as i32,
         //                                                 i32::typ(),
@@ -116,7 +127,7 @@ use ndarray::{Array1, ArrayView1, ArrayView3};
         // img_mat = cv::imgcodecs::imdecode(&test, -1);
         // let img_mat = cv::imgcodecs::imread(img.as_flat_samples_u8().unwrap(), cv::imgcodecs::IMREAD_COLOR);
         
-        cv::highgui::named_window("image", 0)?;
+        //cv::highgui::named_window("image", 0)?;
         cv::highgui::imshow("image", &img_mat)?;
         cv::highgui::wait_key(1)?;
 

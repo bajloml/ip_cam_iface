@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from time import sleep
+from time import sleep, time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,7 +12,6 @@ import urllib.request
 
 from PIL import Image
 import requests
-from io import BytesIOby
 
 # credentials
 username = "admin"
@@ -67,6 +66,9 @@ counter = 0
 
 # open image url
 while True:
+
+    start = time()
+
     req = urllib.request.urlopen("http://192.168.8.155/jpg/" + img_name +".jpg")
     arr = numpy.asarray(bytearray(req.read()), dtype=numpy.uint8)
     opencvImage = cv2.imdecode(arr, -1)
@@ -75,5 +77,7 @@ while True:
     cv2.waitKey(10)
 
     counter += 1
-    print("counter = " + str(counter))
+
+    end = time()
+    print("counter = " + str(counter) + " elapsed time = " + str(end - start))
 

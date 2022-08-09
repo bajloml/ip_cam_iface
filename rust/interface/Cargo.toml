@@ -11,8 +11,4 @@ thirtyfour = "0.30.0"
 image = "0.24.3"
 reqwest = { version = "0.11", features = ["json"] }
 opencv = "0.66.0"
-ndarray = "0.15.6"
-numpy =  "0.16.2"
-bytemuck = "1.11.0"
 nalgebra = "0.31.1"
-cv-convert = "0.20.0"

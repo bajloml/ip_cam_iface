@@ -2,15 +2,9 @@
 //     println!("Hello, world!");
 // }
 
-use image::GenericImageView;
-//use image::DynamicImage;
-//use image::{self, GenericImageView};
 use thirtyfour::prelude::*;
-//use show_image::event;
 use reqwest;
-use numpy;
-use opencv::{ self as cv, highgui, prelude::*, videoio, Result};
-use ndarray::{Array1, ArrayView1, ArrayView3};
+use opencv::{ self as cv, prelude::*};
 
 //#[show_image::main]
 #[tokio::main]
@@ -75,16 +69,13 @@ use ndarray::{Array1, ArrayView1, ArrayView3};
 
         loop{
             /* measure time */
-            //let startTime = std::time::Instant::now(); 
-
+            let startTime = std::time::Instant::now(); 
+                                                
             /* get image from url */
             let img_bytes =  reqwest::get(format!("http://192.168.8.155/jpg/{}{}", img_name, ".jpg"))
-                                                .await?.
-                                                bytes()
-                                                .await?;
-            
-            /* measure time */
-            let startTime = std::time::Instant::now();                                    
+            .await?.
+            bytes()
+            .await?; 
 
             let img = image::load_from_memory(img_bytes.as_ref())?;
 

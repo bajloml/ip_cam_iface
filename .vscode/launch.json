@@ -13,6 +13,15 @@
             "justMyCode": true
         },
 
+        {
+            "name": "Python: byte_test.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/python_test_endian/byte_test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+
         {   
             "name": "Rust: interface.rs",
             "type": "lldb",

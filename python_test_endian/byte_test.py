@@ -192,8 +192,8 @@ for words in WORDS_in_little:
     axis[1].plot(x_axis, words, label="little_val" + str(i))
     i+=1
 
-axis[0].set_title("WORDS_in_big_endian, system is: " + sys.byteorder)
-axis[1].set_title("WORDS_in_little_endian, system is: " + sys.byteorder)
+axis[0].set_title("WORDS_in_big_endian --> " + ("correct" if sys.byteorder == "big" else "wrong representation" ) + ", because system is: " + sys.byteorder)
+axis[1].set_title("WORDS_in_little_endian--> " + ("correct" if sys.byteorder == "little" else "wrong representation" ) + ", because system is: " + sys.byteorder)
 axis[0].legend()
 axis[1].legend()
 plt.show(block=False)
@@ -224,8 +224,8 @@ for words in WORDS_little_endian_reconstructed:
     axis[1].plot(x_axis, words, label="little_val" + str(i))
     i+=1
 
-axis[0].set_title("WORDS_big_endian_reconstructed, system is: " + sys.byteorder)
-axis[1].set_title("WORDS_little_endian_reconstructed, system is: " + sys.byteorder)
+axis[0].set_title("WORDS_big_endian_reconstructed --> " + ("correct" if sys.byteorder == "big" else "wrong representation" ) + ", because system is: " + sys.byteorder)
+axis[1].set_title("WORDS_little_endian_reconstructed --> " + ("correct" if sys.byteorder == "little" else "wrong representation" ) + ", because system is: " + sys.byteorder)
 axis[0].legend()
 axis[1].legend()
 plt.show()

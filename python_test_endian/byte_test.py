@@ -34,6 +34,46 @@ def detect_overflow2(value, old_value, overflow, overflow_step):
     
     return num_of_oveflows
 
+# create exp function without 2x overflows in one step
+def create_exp(num_of_samples, words_in_sample, x_axis):
+    num = 0
+    power = 2
+    data = []
+
+    for i in range(int(num_of_samples * words_in_sample)):
+        if ((i!=0) and i%words_in_sample==0):
+            num+=1
+
+        data.append((x_axis[num] + (i%words_in_sample * 10))**power)
+    
+    return data
+
+# create exp function without 2x overflows in one step
+def create_exp_2x_overflow(num_of_samples, words_in_sample):
+    magic_num = 1
+    num = 1
+    data = []
+
+    for i in range(int(num_of_samples * words_in_sample)):
+        if(i%words_in_sample == 0) and (i!=0):
+            magic_num +=0.2
+            num = 1
+
+        data.append(int((num)**magic_num))
+        num+=1
+
+    return data
+
+# create liner function
+def create_linear(num_of_samples, words_in_sample):
+    num = 0
+    data = []
+
+    for i in range(int(num_of_samples * words_in_sample)):
+        data.append(num*5)
+        num+=1
+
+    return data
 
 
 file_name = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__))) + "/test.log"
@@ -47,21 +87,13 @@ num_of_samples = 50
 
 uint16_size = 2**16
 
-# create bytes 
-data = []
-magic_num = 1
-num = 1
-for i in range(int(num_of_samples * bytes_to_read / bytes_in_word)):
-    if(i%words_in_sample == 0) and (i!=0):
-        magic_num +=0.07
-        num = 1
+# x axis for ploting
+x_axis = list(range(num_of_samples))
 
-    data.append(int((num)**magic_num))
-    num+=1
-
-# for i in range(int(num_of_samples * bytes_to_read / bytes_in_word)):
-#     data.append(num+num)
-#     num+=1
+# create bytes logic
+data = create_exp(num_of_samples, words_in_sample, x_axis)
+# data = create_exp_2x_overflow(num_of_samples, words_in_sample)
+# data = create_linear(num_of_samples, words_in_sample)
 
 data_arr_16 = np.array(data).astype(np.uint16)
 dummy_bytes = bytearray(data_arr_16)
@@ -81,16 +113,11 @@ try:
     with open(file_name, "rb") as file:
         WORDS_in_big = [[] for _ in range(words_in_sample)]
         WORDS_in_little = [[] for _ in range(words_in_sample)]
-        x_axis = []
 
         bytes = file.read()
         bytes_len = len(bytes)
         word_samples = int(bytes_len/bytes_to_read)
         print("bytes len = " + str(len(bytes)) + ", samples: " + str(word_samples))
-
-        # axis x in plot
-        for i in range(word_samples):
-            x_axis.append(i)
 
         # endian big
         endian = "big"
@@ -154,12 +181,9 @@ for words in WORDS_in_little:
 
 axis[0].set_title("WORDS_in_big_endian")
 axis[1].set_title("WORDS_in_little_endian")
-
 axis[0].legend()
 axis[1].legend()
-
 plt.show(block=False)
-
 
 # reconstruct values from uint16
 WORDS_in_big_test = [[] for _ in range(words_in_sample)]
@@ -239,10 +263,8 @@ for words in WORDS_in_little_test:
 
 axis[0].set_title("WORDS_in_big_endian")
 axis[1].set_title("WORDS_in_little_endian")
-
 axis[0].legend()
 axis[1].legend()
-
 plt.show()
 
 print("done")

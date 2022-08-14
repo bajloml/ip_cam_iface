@@ -2,6 +2,40 @@ import os
 from matplotlib import pyplot as plt
 import numpy as np
 
+def detect_overflow(value, old_value, overflow, overflow_step):
+    ret = False
+
+    if(((overflow*overflow_step)+value)<old_value):
+        ret = True
+    else:
+        ret = False
+    
+    return ret
+
+def detect_overflow2(value, old_value, overflow, overflow_step):
+    num_of_oveflows = overflow
+
+    calc_val = (overflow*overflow_step) + value
+
+    if calc_val < old_value:
+
+        # new_step = ((overflow*overflow_step)+old_value)
+        new_step = (overflow_step - old_value) + value
+
+        new_val = old_value + new_step
+
+        while True:
+            overflows = new_val - overflow_step
+            if overflows>0:
+                num_of_oveflows +=1
+                new_val -=overflow_step
+            else:
+                break
+    
+    return num_of_oveflows
+
+
+
 file_name = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__))) + "/test.log"
 
 bytes_to_read = 12
@@ -11,21 +45,23 @@ words_in_sample = 6
 
 num_of_samples = 50
 
+uint16_size = 2**16
+
 # create bytes 
 data = []
 magic_num = 1
 num = 1
-# for i in range(int(num_of_samples * bytes_to_read / bytes_in_word)):
-#     if(i%words_in_sample == 0) and (i!=0):
-#         magic_num +=0.2
-#         num = 1
-
-#     data.append(int((num)**magic_num))
-#     num+=1
-
 for i in range(int(num_of_samples * bytes_to_read / bytes_in_word)):
-    data.append(num+num)
+    if(i%words_in_sample == 0) and (i!=0):
+        magic_num +=0.07
+        num = 1
+
+    data.append(int((num)**magic_num))
     num+=1
+
+# for i in range(int(num_of_samples * bytes_to_read / bytes_in_word)):
+#     data.append(num+num)
+#     num+=1
 
 data_arr_16 = np.array(data).astype(np.uint16)
 dummy_bytes = bytearray(data_arr_16)
@@ -125,14 +161,13 @@ axis[1].legend()
 plt.show(block=False)
 
 
-# test with no uint16
+# reconstruct values from uint16
 WORDS_in_big_test = [[] for _ in range(words_in_sample)]
 WORDS_in_little_test = [[] for _ in range(words_in_sample)]
 
 word = 0
 for words in WORDS_in_big:
-    overflow = False
-    overflow_passed = False
+    overflow = 0
     first_run_finished = False
     old_value = 0
 
@@ -143,20 +178,13 @@ for words in WORDS_in_big:
             WORDS_in_big_test[word].append(value)
             old_value = value
 
-        if((value < old_value) and first_run_finished):
-            overflow = True
+        if(detect_overflow(value, old_value, overflow, uint16_size) and first_run_finished):
+            overflow +=1
+        # overflow = detect_overflow2(value, old_value, overflow, uint16_size)
 
-        if overflow:
-            WORDS_in_big_test[word].append(value + 65535)
-            old_value = value + 65535
-
-        elif(first_run_finished):
-            if overflow:
-                WORDS_in_big_test[word].append(value + 65535)
-                old_value = value + 65535
-            else:
-                WORDS_in_big_test[word].append(value)
-                old_value = value
+        if first_run_finished:
+            WORDS_in_big_test[word].append(value + overflow*uint16_size)
+            old_value = value + overflow*uint16_size
 
         sample_counter += 1
         first_run_finished = True  
@@ -168,7 +196,7 @@ for words in WORDS_in_big:
 
 word = 0
 for words in WORDS_in_little:
-    overflow = False
+    overflow = 0
     first_run_finished = False
     old_value = 0
 
@@ -179,20 +207,13 @@ for words in WORDS_in_little:
             WORDS_in_little_test[word].append(value)
             old_value = value
 
-        if((value < old_value) and first_run_finished):
-            overflow = True
+        if(detect_overflow(value, old_value, overflow, uint16_size) and first_run_finished):
+            overflow +=1
+        # overflow = detect_overflow2(value, old_value, overflow, uint16_size)
 
-        if overflow:
-            WORDS_in_little_test[word].append(value + 65535)
-            old_value = value + 65535
-
-        elif(first_run_finished):
-            if overflow:
-                WORDS_in_little_test[word].append(value + 65535)
-                old_value = value + 65535
-            else:
-                WORDS_in_little_test[word].append(value)
-                old_value = value
+        if first_run_finished:
+            WORDS_in_little_test[word].append(value + overflow*uint16_size)
+            old_value = value + overflow*uint16_size
 
         sample_counter += 1
         first_run_finished = True  
@@ -202,7 +223,7 @@ for words in WORDS_in_little:
     if(word>5):
         word = 0
 
-# ploting in overflow, (uint16)
+# ploting in reconstructed values
 fig, axis = plt.subplots(2)
 fig.suptitle("big and little endian")
 

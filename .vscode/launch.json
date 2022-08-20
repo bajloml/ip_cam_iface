@@ -14,6 +14,15 @@
         },
 
         {
+            "name": "Python: interface_tf.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/python/interface_tf/interface_tf.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+
+        {
             "name": "Python: byte_test.py",
             "type": "python",
             "request": "launch",

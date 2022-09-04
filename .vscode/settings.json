@@ -2,5 +2,5 @@
     "files.autoSave": "afterDelay",
     "rust-analyzer.trace.extension": true,
     "rust-analyzer.trace.server": "verbose",
-    "rust-analyzer.linkedProjects": [ "rust/interface/Cargo.toml",]
+    "rust-analyzer.linkedProjects": [ "rust/interface/Cargo.toml", "rust/interface_tf/Cargo.toml"]
 }

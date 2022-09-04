@@ -12,6 +12,19 @@
 			"options": {
 				"cwd": "${workspaceFolder}/rust/interface/"
 			},
+		},
+
+		{
+			"label": "rust: cargo build interface_tf",
+			"type": "cargo",
+			"command": "build",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build",
+			"options": {
+				"cwd": "${workspaceFolder}/rust/interface_tf/"
+			},
 		}
 	]
 }

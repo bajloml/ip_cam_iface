@@ -11,7 +11,10 @@
 -   run ```sudo apt-get install libclang-dev```
 -   run ```sudo apt-get install clang-12 --install-suggests```
 -   run ```cargo build```to build application/package
--   run ```cargo run``` to run the application 
+-   run ```cargo run``` to run the application
+
+## note:
+-   tensorflow shared libs (.so) are installed manually 
 
 ## alternative to cargo packaging is using an compiler:
 -   ```rustc src/interface.rs``` --> the output will be in the folder from where the compiler has been called

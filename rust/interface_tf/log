@@ -1,0 +1,133 @@
+warning: unused import: `self as cv`
+ --> src/main.rs:3:15
+  |
+3 | use opencv::{ self as cv, prelude::*};
+  |               ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `Vec4b`
+ --> src/main.rs:5:28
+  |
+5 | use opencv::core::{Scalar, Vec4b};
+  |                            ^^^^^
+
+warning: unused import: `std::error::Error`
+ --> src/main.rs:8:5
+  |
+8 | use std::error::Error;
+  |     ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::result::Result`
+  --> src/main.rs:10:5
+   |
+10 | use std::result::Result;
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `tensorflow::Code`
+  --> src/main.rs:11:5
+   |
+11 | use tensorflow::Code;
+   |     ^^^^^^^^^^^^^^^^
+
+warning: unused import: `tensorflow::SessionRunArgs`
+  --> src/main.rs:15:5
+   |
+15 | use tensorflow::SessionRunArgs;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `tensorflow::Status`
+  --> src/main.rs:16:5
+   |
+16 | use tensorflow::Status;
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `tensorflow::Tensor`
+  --> src/main.rs:17:5
+   |
+17 | use tensorflow::Tensor;
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `tensorflow::DEFAULT_SERVING_SIGNATURE_DEF_KEY`
+  --> src/main.rs:18:5
+   |
+18 | use tensorflow::DEFAULT_SERVING_SIGNATURE_DEF_KEY;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `ToTensorHandle`, `raw_ops`, `self`
+  --> src/main.rs:20:25
+   |
+20 | use tensorflow::eager::{self, raw_ops, ToTensorHandle};
+   |                         ^^^^  ^^^^^^^  ^^^^^^^^^^^^^^
+
+warning: unreachable statement
+   --> src/main.rs:155:5
+    |
+123 | /     loop{
+124 | |         /* measure time */
+125 | |         let start_time = std::time::Instant::now(); 
+126 | |                                             
+...   |
+152 | |
+153 | |     }
+    | |_____- any code following this expression is unreachable
+154 | 
+155 |       println!("finished");
+    |       ^^^^^^^^^^^^^^^^^^^^ unreachable statement
+    |
+    = note: `#[warn(unreachable_code)]` on by default
+    = note: this warning originates in the macro `println` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unused variable: `output`
+  --> src/main.rs:35:9
+   |
+35 |     let output = std::process::Command::new("chromedriver")
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_output`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `counter`
+   --> src/main.rs:109:13
+    |
+109 |     let mut counter = 0 as u32;
+    |             ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_counter`
+
+warning: unused variable: `session`
+   --> src/main.rs:120:9
+    |
+120 |     let session = &bundle.session;
+    |         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_session`
+
+warning: unused variable: `start_time`
+   --> src/main.rs:125:13
+    |
+125 |         let start_time = std::time::Instant::now(); 
+    |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_start_time`
+
+warning: unused variable: `img_mat`
+   --> src/main.rs:136:17
+    |
+136 | ...   let mut img_mat = Mat::new_rows_cols_with_default(img.height().try_into()?, img.width().try_into()?, opencv::core::CV_8UC3, Scalar:...
+    |               ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_img_mat`
+
+warning: variable does not need to be mutable
+   --> src/main.rs:109:9
+    |
+109 |     let mut counter = 0 as u32;
+    |         ----^^^^^^^
+    |         |
+    |         help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` on by default
+
+warning: variable does not need to be mutable
+   --> src/main.rs:136:13
+    |
+136 | ...   let mut img_mat = Mat::new_rows_cols_with_default(img.height().try_into()?, img.width().try_into()?, opencv::core::CV_8UC3, Scalar:...
+    |           ----^^^^^^^
+    |           |
+    |           help: remove this `mut`
+
+warning: `interface_tf` (bin "interface_tf") generated 18 warnings
+    Finished dev [unoptimized + debuginfo] target(s) in 0.45s
+     Running `target/debug/interface_tf`

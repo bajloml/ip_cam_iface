@@ -149,18 +149,43 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
         let img_bytes = client.get(format!("http://192.168.8.155/jpg/{}{}", _img_name, ".jpg")).send().unwrap().bytes().unwrap();
 
         let img = image::load_from_memory_with_format(img_bytes.as_ref(), image::ImageFormat::Jpeg)?;
+        let img_resized = image::imageops::resize(&img, 320, 320, image::imageops::FilterType::Nearest);
 
-        let img_pixels = img.as_rgb8().unwrap().pixels();
+        // let img_tensor: tract_tensorflow::prelude::Tensor = tract_tensorflow::prelude::tract_ndarray::Array4::from_shape_fn((1, 320, 320, 3), |(_, y, x, c)| {
+        //     img_resized[(x as _, y as _)][c]
+        // })
+        // .into();
 
-        let mut vec_flattened: Vec<u8> = Vec::new();
-        for rgb in img_pixels{
-            vec_flattened.push(rgb[2] as u8);
-            vec_flattened.push(rgb[1] as u8);
-            vec_flattened.push(rgb[0] as u8);
-        }
+        // let img_pixels = img.as_rgb8().unwrap().pixels();
+        // let mut vec_flattened: Vec<u8> = Vec::new();
+        // for rgb in img_pixels{
+        //     vec_flattened.push(rgb[2] as u8);
+        //     vec_flattened.push(rgb[1] as u8);
+        //     vec_flattened.push(rgb[0] as u8);
+        // }
 
-        //The `input` tensor expects BGR pixel data.
-        let input = Tensor::new(&[1, img.height() as u64, img.width() as u64, 3]).with_values(&vec_flattened)?;
+        // //The `input` tensor expects BGR pixel data.
+        // let input = Tensor::new(&[1, img.height() as u64, img.width() as u64, 3]).with_values(&vec_flattened)?;
+
+        /* save image to run on model */
+        let save_image_path = "saved_image.jpg";
+        img_resized.save(save_image_path);
+
+        // Create an eager execution context
+        let opts = eager::ContextOptions::new();
+        let ctx = eager::Context::new(opts)?;
+
+        // Load an input image.
+        let fname = save_image_path.to_handle(&ctx)?;
+        let buf = raw_ops::read_file(&ctx, &fname)?;
+        let img_tensor = raw_ops::decode_image(&ctx, &buf)?;
+        // let cast2 = raw_ops::Cast::new().DstT(tensorflow::DataType::Float);
+        // let img_tensor = cast2.call(&ctx, &img_tensor)?;
+        let batch = raw_ops::expand_dims(&ctx, &img_tensor, &0)?; // add batch dim
+        let readonly_x = batch.resolve()?;
+
+        // The current eager API implementation requires unsafe block to feed the tensor into a graph.
+        let input: Tensor<u8> = unsafe { readonly_x.into_tensor() };
 
         // get in/out operations
         let signature = bundle.meta_graph_def().get_signature(DEFAULT_SERVING_SIGNATURE_DEF_KEY)?;
@@ -190,37 +215,36 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
         let output_scores: Tensor<f32> = args.fetch(token_output_scores)?;
 
 
-        // Let's store the results as a Vec<BBox>
-        let bboxes: Vec<_> = output_boxes
-        .chunks_exact(4) // Split into chunks of 4
-        .zip(output_scores.iter()) // Combine it with prob_res
-        .map(|(token_output_boxes, &output_scores)| BBox {
-            y1: token_output_boxes[0],
-            x1: token_output_boxes[1],
-            y2: token_output_boxes[2],
-            x2: token_output_boxes[3],
-            prob: output_scores,
-        })
-        .collect();
+        // // Let's store the results as a Vec<BBox>
+        // let bboxes: Vec<_> = output_boxes
+        // .chunks_exact(4) // Split into chunks of 4
+        // .zip(output_scores.iter()) // Combine it with prob_res
+        // .map(|(token_output_boxes, &output_scores)| BBox {
+        //     y1: token_output_boxes[0],
+        //     x1: token_output_boxes[1],
+        //     y2: token_output_boxes[2],
+        //     x2: token_output_boxes[3],
+        //     prob: output_scores,
+        // })
+        // .collect();
 
-        println!("BBox Length: {}, BBoxes:{:#?}", bboxes.len(), bboxes);
+        //println!("BBox Length: {}, BBoxes:{:#?}", bboxes.len(), bboxes);
 
         //We want to change input_image since it is not needed.
-        let mut img_out = img.to_rgb8();
+        let mut img_out = img.to_rgba8();
 
         //Iterate through all bounding boxes
-        for bbox in bboxes {
+        // for bbox in bboxes {
 
-            //Create a `Rect` from the bounding box.
-            let rect = Rect::at(bbox.x1 as i32, bbox.y1 as i32)
-                .of_size((bbox.x2 - bbox.x1) as u32, (bbox.y2 - bbox.y1) as u32);
+        //     //Create a `Rect` from the bounding box.
+        //     let rect = Rect::at(bbox.x1 as i32, bbox.y1 as i32).of_size((bbox.x2 - bbox.x1) as u32, (bbox.y2 - bbox.y1) as u32);
 
-            //Draw a green line around the bounding box
-            draw_hollow_rect_mut(&mut img_out, rect, image::Rgba([0, 255, 0, 0]));
-        }
+        //     //Draw a green line around the bounding box
+        //     draw_hollow_rect_mut(&mut img_out, rect, image::Rgba([0, 255, 0, 0]));
+        // }
 
         //Once we've modified the image we save it in the output location.
-        img_out.save(&opt.output)?;
+        img_out.save("test.jpeg")?;
 
         print!("test");
 

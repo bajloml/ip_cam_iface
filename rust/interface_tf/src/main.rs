@@ -10,6 +10,8 @@ use image::*;
 
 use imageproc::drawing::draw_hollow_rect_mut;
 use imageproc::rect::Rect;
+use imageproc::drawing::draw_text_mut;
+use rusttype::{Font, Scale};
 
 use std::error::Error;
 use std::path::PathBuf;
@@ -26,12 +28,13 @@ use tensorflow::DEFAULT_SERVING_SIGNATURE_DEF_KEY;
 use tensorflow::eager::{self, raw_ops, ToTensorHandle};
 
 // Make it a bit nicer to work with the results, by adding a more explanatory struct
-pub struct BBox {
+pub struct Detection {
     pub x1: f32,
     pub y1: f32,
     pub x2: f32,
     pub y2: f32,
-    pub prob: f32,
+    pub score: f32,
+    pub class: f32,
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
@@ -42,6 +45,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
 
     /* image name */
     let _img_name = "cam_img";
+
+    /* image dimensions to feed into the model */
+    let model_image_dim = 320 as u32;
+    let show_score_min = 0.30 as f32;
 
     /* camera configuration and setup */
     // {
@@ -133,7 +140,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
     let mut graph = Graph::new();
     let bundle = SavedModelBundle::load(&SessionOptions::new(), &["serve"], &mut graph, model_path)?;
     let session = &bundle.session;
-    println!("model loaded in {:?}", model_loading_time.elapsed());
+    println!(" loaded in {:?}", model_loading_time.elapsed());
 
     // Create an eager execution context
     let opts = eager::ContextOptions::new();
@@ -149,7 +156,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
         let img_bytes = client.get(format!("http://192.168.8.155/jpg/{}{}", _img_name, ".jpg")).send().unwrap().bytes().unwrap();
 
         let img = image::load_from_memory_with_format(img_bytes.as_ref(), image::ImageFormat::Jpeg)?;
-        let img_resized = image::imageops::resize(&img, 320, 320, image::imageops::FilterType::Nearest);
+        let img_resized = image::imageops::resize(&img, model_image_dim, model_image_dim, image::imageops::FilterType::Nearest);
 
         // let img_tensor: tract_tensorflow::prelude::Tensor = tract_tensorflow::prelude::tract_ndarray::Array4::from_shape_fn((1, 320, 320, 3), |(_, y, x, c)| {
         //     img_resized[(x as _, y as _)][c]
@@ -181,7 +188,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
         let img_tensor = raw_ops::decode_image(&ctx, &buf)?;
         // let cast2 = raw_ops::Cast::new().DstT(tensorflow::DataType::Float);
         // let img_tensor = cast2.call(&ctx, &img_tensor)?;
-        let batch = raw_ops::expand_dims(&ctx, &img_tensor, &0)?; // add batch dim
+        let batch = raw_ops::expand_dims(&ctx, &img_tensor, &0)?; // add batch dim at position 0 to have 1,320,320,3
         let readonly_x = batch.resolve()?;
 
         // The current eager API implementation requires unsafe block to feed the tensor into a graph.
@@ -196,16 +203,38 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
         let output_info_classes = signature.get_output("detection_classes")?;
         let output_info_scores = signature.get_output("detection_scores")?;
 
+        let output_info_raw_boxes = signature.get_output("raw_detection_boxes")?;
+        let output_info_raw_scores = signature.get_output("raw_detection_scores")?;
+        let output_info_multiclass_scores = signature.get_output("detection_multiclass_scores")?;
+        let output_info_anchor_indices = signature.get_output("detection_anchor_indices")?;
+        let output_info_num_detections = signature.get_output("num_detections")?;
+
         // Run the graph.
         let mut args = SessionRunArgs::new();
         
         // load input image
         args.add_feed(&graph.operation_by_name_required(&input_info.name().name)?, 0, &input);
-        
+
+        // args.add_feed(&graph.operation_by_name_required(&output_info_anchor_indices.name().name)?, 0, &input);
+        // args.add_feed(&graph.operation_by_name_required(&output_info_boxes.name().name)?, 1, &input);
+        // args.add_feed(&graph.operation_by_name_required(&output_info_classes.name().name)?, 2, &input);
+        // args.add_feed(&graph.operation_by_name_required(&output_info_multiclass_scores.name().name)?, 3, &input);
+        // args.add_feed(&graph.operation_by_name_required(&output_info_scores.name().name)?, 4, &input);
+        // args.add_feed(&graph.operation_by_name_required(&output_info_num_detections.name().name)?, 5, &input);
+        // args.add_feed(&graph.operation_by_name_required(&output_info_raw_boxes.name().name)?, 6, &input);
+        // args.add_feed(&graph.operation_by_name_required(&output_info_raw_scores.name().name)?, 7, &input);
+
+
         // output operations
-        let token_output_boxes = args.request_fetch(&graph.operation_by_name_required(&output_info_boxes.name().name)?, 0);
-        let token_output_classes = args.request_fetch(&graph.operation_by_name_required(&output_info_classes.name().name)?, 0);
-        let token_output_scores = args.request_fetch(&graph.operation_by_name_required(&output_info_scores.name().name)?, 0);
+        let token_output_boxes = args.request_fetch(&graph.operation_by_name_required(&output_info_boxes.name().name)?, 1);
+        let token_output_classes = args.request_fetch(&graph.operation_by_name_required(&output_info_classes.name().name)?, 2);
+        let token_output_scores = args.request_fetch(&graph.operation_by_name_required(&output_info_scores.name().name)?, 4);
+
+        let token_output_raw_boxes = args.request_fetch(&graph.operation_by_name_required(&output_info_raw_boxes.name().name)?, 6);
+        let token_output_raw_scores = args.request_fetch(&graph.operation_by_name_required(&output_info_raw_scores.name().name)?, 7);
+        let token_output_multiclass_scores = args.request_fetch(&graph.operation_by_name_required(&output_info_multiclass_scores.name().name)?, 3);
+        let token_output_anchor_indices = args.request_fetch(&graph.operation_by_name_required(&output_info_anchor_indices.name().name)?, 0);
+        let token_output_num_detections = args.request_fetch(&graph.operation_by_name_required(&output_info_num_detections.name().name)?, 5);
 
         session.run(&mut args)?;
 
@@ -213,6 +242,11 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
         let output_boxes: Tensor<f32> = args.fetch(token_output_boxes)?;
         let output_classes: Tensor<f32> = args.fetch(token_output_classes)?;
         let output_scores: Tensor<f32> = args.fetch(token_output_scores)?;
+
+        let output_raw_boxes: Tensor<f32> = args.fetch(token_output_raw_boxes)?;
+        let output_raw_scores: Tensor<f32> = args.fetch(token_output_raw_scores)?;
+        let output_multiclass_scores: Tensor<f32> = args.fetch(token_output_multiclass_scores)?;
+        let output_anchor_indices: Tensor<f32> = args.fetch(token_output_anchor_indices)?;
 
 
         // // Let's store the results as a Vec<BBox>
@@ -228,23 +262,50 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
         // })
         // .collect();
 
+        let mut detections: Vec<Detection> = Vec::new(); 
+        for (bbox, score, class) in itertools::izip!(output_boxes.chunks_exact(4), output_scores.iter(), output_classes.iter()){
+            
+            if *score > show_score_min{
+                let bb = Detection{
+                    y1: bbox[0],
+                    x1: bbox[1],
+                    y2: bbox[2],
+                    x2: bbox[3],
+                    score: *score,
+                    class: *class,
+                };
+                detections.push(bb);
+            }
+        }
+
         //println!("BBox Length: {}, BBoxes:{:#?}", bboxes.len(), bboxes);
 
         //We want to change input_image since it is not needed.
-        let mut img_out = img.to_rgba8();
+        let mut img_out = img_resized.clone();
+        // let mut img_out = img_resized.to_rgba8();
+        // let mut img_out = img.to_rgba8();
 
         //Iterate through all bounding boxes
-        // for bbox in bboxes {
+        for detection in detections {
 
-        //     //Create a `Rect` from the bounding box.
-        //     let rect = Rect::at(bbox.x1 as i32, bbox.y1 as i32).of_size((bbox.x2 - bbox.x1) as u32, (bbox.y2 - bbox.y1) as u32);
+            //Create a `Rect` from the bounding box.
+            let pos_x = (detection.x1 * model_image_dim as f32) as i32;
+            let pos_y = (detection.y1 * model_image_dim as f32) as i32;
+            let width = ((detection.x2 - detection.x1) * model_image_dim as f32) as u32;
+            let height = ((detection.y2 - detection.y1) * model_image_dim as f32) as u32;
+            let rect = Rect::at(pos_x, pos_y).of_size(width as u32, height as u32);
 
-        //     //Draw a green line around the bounding box
-        //     draw_hollow_rect_mut(&mut img_out, rect, image::Rgba([0, 255, 0, 0]));
-        // }
+            // Draw a green line around the bounding box
+            draw_hollow_rect_mut(&mut img_out, rect, image::Rgba([0, 255, 0, 0]));
+
+            // Write score text on bounding box
+            let font = Vec::from(include_bytes!("DejaVuSans.ttf") as &[u8]);
+            let font = Font::try_from_vec(font).unwrap();
+            draw_text_mut(&mut img_out, image::Rgba([0, 255, 0, 0]), pos_x, pos_y, Scale {x: 10 as f32, y: 10 as f32}, &font, detection.score.to_string().as_str());
+        }
 
         //Once we've modified the image we save it in the output location.
-        img_out.save("test.jpeg")?;
+        img_out.save("detections.jpeg")?;
 
         print!("test");
 

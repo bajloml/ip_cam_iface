@@ -1,3 +1,4 @@
+use std::fs;
 use tensorflow::eager::raw_ops::random_shuffle_queue;
 use thirtyfour_sync::prelude::*;
 use reqwest;
@@ -14,6 +15,8 @@ use imageproc::drawing::draw_text_mut;
 use rusttype::{Font, Scale};
 
 use std::error::Error;
+use std::collections::HashMap;
+
 use std::path::PathBuf;
 use std::result::Result;
 use tensorflow::Code;
@@ -130,7 +133,52 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
     let client = reqwest::blocking::Client::builder().build()?;
     let mut counter = 0 as u32;
 
-    // Load the model.
+    /* get labels */
+    let mut labels_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    labels_path.push("models/mscoco_complete_label_map.pbtxt");
+    let labels_str = fs::read_to_string(labels_path.display().to_string());
+    match labels_str{
+        Ok(_) => println!("Labels ({:?}) found", labels_path.as_os_str()),
+        Err(error) => panic!("Problem with opening {:?}: {:?}", labels_path.as_os_str(), error),
+    };
+
+    /* get label data into a hash map */
+    let mut labels: HashMap<u32, String> = HashMap::new();
+    let mut labels_str = labels_str.unwrap();
+    let label_field_id = "id";
+    let label_field_name = "display_name";
+    print!("Loading labels... ");
+    while (labels_str.len() > 1) {
+
+        /* get label item string boundaries */
+        let label_description_begin = labels_str.find('{').unwrap();
+        let label_description_end = labels_str.find('}').unwrap() + 1;
+
+        /* get label item data */
+        let label_data = &labels_str[label_description_begin..label_description_end];
+
+        /* get label item */
+        let item = label_data.to_string();
+
+        /* get label id */
+        let item_begin = item.find(label_field_id).unwrap();
+        let item_end = item_begin + (&item[item_begin..]).to_string().find('\n').unwrap() + 1;
+        let id = (&item[item_begin + label_field_id.len() + 2..item_end].trim()).parse::<u32>().unwrap();
+
+        /* get label name */
+        let item_begin = item.find(label_field_name).unwrap();
+        let item_end = item_begin + (&item[item_begin..]).to_string().find('\n').unwrap() + 1;
+        let label_name = item[item_begin + label_field_name.len() + 3.. item_end - 2].trim().to_string();
+
+        /* add to labels hash map */
+        labels.entry(id).or_insert(label_name);
+
+        /* move to next item */
+        labels_str = labels_str[label_description_end..].to_string();
+    }
+    println!("loaded!");
+
+    /* Load the model.*/
     let mut workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     workspace.push("models/ssd_mobilenet_v2_320x320_coco17_tpu-8/saved_model");
     let model_path = workspace.display().to_string();
@@ -148,7 +196,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
 
     loop{
         /* measure time */
-        let start_time = std::time::Instant::now(); 
+        let detection_time = std::time::Instant::now(); 
                                             
         /* get image from url */
         // let img_bytes = client.get(format!("http://192.168.8.155/jpg/{}{}", _img_name, ".jpg")).send().await?.bytes().await?;
@@ -176,7 +224,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
 
         /* save image to run on model */
         let save_image_path = "saved_image.jpg";
-        img_resized.save(save_image_path);
+        img_resized.save(save_image_path)?;
 
         // Create an eager execution context
         let opts = eager::ContextOptions::new();
@@ -203,38 +251,16 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
         let output_info_classes = signature.get_output("detection_classes")?;
         let output_info_scores = signature.get_output("detection_scores")?;
 
-        let output_info_raw_boxes = signature.get_output("raw_detection_boxes")?;
-        let output_info_raw_scores = signature.get_output("raw_detection_scores")?;
-        let output_info_multiclass_scores = signature.get_output("detection_multiclass_scores")?;
-        let output_info_anchor_indices = signature.get_output("detection_anchor_indices")?;
-        let output_info_num_detections = signature.get_output("num_detections")?;
-
         // Run the graph.
         let mut args = SessionRunArgs::new();
         
         // load input image
         args.add_feed(&graph.operation_by_name_required(&input_info.name().name)?, 0, &input);
 
-        // args.add_feed(&graph.operation_by_name_required(&output_info_anchor_indices.name().name)?, 0, &input);
-        // args.add_feed(&graph.operation_by_name_required(&output_info_boxes.name().name)?, 1, &input);
-        // args.add_feed(&graph.operation_by_name_required(&output_info_classes.name().name)?, 2, &input);
-        // args.add_feed(&graph.operation_by_name_required(&output_info_multiclass_scores.name().name)?, 3, &input);
-        // args.add_feed(&graph.operation_by_name_required(&output_info_scores.name().name)?, 4, &input);
-        // args.add_feed(&graph.operation_by_name_required(&output_info_num_detections.name().name)?, 5, &input);
-        // args.add_feed(&graph.operation_by_name_required(&output_info_raw_boxes.name().name)?, 6, &input);
-        // args.add_feed(&graph.operation_by_name_required(&output_info_raw_scores.name().name)?, 7, &input);
-
-
         // output operations
         let token_output_boxes = args.request_fetch(&graph.operation_by_name_required(&output_info_boxes.name().name)?, 1);
         let token_output_classes = args.request_fetch(&graph.operation_by_name_required(&output_info_classes.name().name)?, 2);
         let token_output_scores = args.request_fetch(&graph.operation_by_name_required(&output_info_scores.name().name)?, 4);
-
-        let token_output_raw_boxes = args.request_fetch(&graph.operation_by_name_required(&output_info_raw_boxes.name().name)?, 6);
-        let token_output_raw_scores = args.request_fetch(&graph.operation_by_name_required(&output_info_raw_scores.name().name)?, 7);
-        let token_output_multiclass_scores = args.request_fetch(&graph.operation_by_name_required(&output_info_multiclass_scores.name().name)?, 3);
-        let token_output_anchor_indices = args.request_fetch(&graph.operation_by_name_required(&output_info_anchor_indices.name().name)?, 0);
-        let token_output_num_detections = args.request_fetch(&graph.operation_by_name_required(&output_info_num_detections.name().name)?, 5);
 
         session.run(&mut args)?;
 
@@ -242,12 +268,6 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
         let output_boxes: Tensor<f32> = args.fetch(token_output_boxes)?;
         let output_classes: Tensor<f32> = args.fetch(token_output_classes)?;
         let output_scores: Tensor<f32> = args.fetch(token_output_scores)?;
-
-        let output_raw_boxes: Tensor<f32> = args.fetch(token_output_raw_boxes)?;
-        let output_raw_scores: Tensor<f32> = args.fetch(token_output_raw_scores)?;
-        let output_multiclass_scores: Tensor<f32> = args.fetch(token_output_multiclass_scores)?;
-        let output_anchor_indices: Tensor<f32> = args.fetch(token_output_anchor_indices)?;
-
 
         // // Let's store the results as a Vec<BBox>
         // let bboxes: Vec<_> = output_boxes
@@ -278,12 +298,8 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
             }
         }
 
-        //println!("BBox Length: {}, BBoxes:{:#?}", bboxes.len(), bboxes);
-
         //We want to change input_image since it is not needed.
         let mut img_out = img_resized.clone();
-        // let mut img_out = img_resized.to_rgba8();
-        // let mut img_out = img.to_rgba8();
 
         //Iterate through all bounding boxes
         for detection in detections {
@@ -296,18 +312,23 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
             let rect = Rect::at(pos_x, pos_y).of_size(width as u32, height as u32);
 
             // Draw a green line around the bounding box
-            draw_hollow_rect_mut(&mut img_out, rect, image::Rgba([0, 255, 0, 0]));
+            draw_hollow_rect_mut(&mut img_out, rect, image::Rgba([0, 0, 0, 0]));
 
-            // Write score text on bounding box
+            // Write label class and score text on bounding box
             let font = Vec::from(include_bytes!("DejaVuSans.ttf") as &[u8]);
             let font = Font::try_from_vec(font).unwrap();
-            draw_text_mut(&mut img_out, image::Rgba([0, 255, 0, 0]), pos_x, pos_y, Scale {x: 10 as f32, y: 10 as f32}, &font, detection.score.to_string().as_str());
+            draw_text_mut(&mut img_out,
+                            image::Rgba([0, 0, 0, 0]), 
+                            pos_x, 
+                            pos_y, 
+                            Scale {x: 15 as f32, y: 15 as f32},
+                            &font, 
+                            format!("{} {}", labels.get(&(detection.class as u32)).unwrap().as_str(), detection.score.to_string().as_str()).as_str()
+                        );
         }
 
         //Once we've modified the image we save it in the output location.
         img_out.save("detections.jpeg")?;
-
-        print!("test");
 
         // Load an input image.
         // let fname = "examples/mobilenetv3/sample.png".to_handle(&ctx)?;
@@ -335,8 +356,8 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
     //     highgui::imshow("image", &rgb_img_mat)?;
     //     highgui::wait_key(1)?;
 
-    //     counter += 1;
-    //     println!("counter = {}, elapsed time = {:?}", counter, start_time.elapsed());
+        counter += 1;
+        println!("counter = {}, elapsed time = {:?}", counter, detection_time.elapsed());
 
     }
 

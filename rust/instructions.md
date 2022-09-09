@@ -1,4 +1,4 @@
-# Camera interface:
+## Camera interface:
 - camera image is taken from the local url
 - image is fed model
 - output image(with detections) is shown and saved

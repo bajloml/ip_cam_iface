@@ -7,10 +7,13 @@
   year = {2020}
 }
 
+### prerequisite
+- check if correct ```tensorflow .so``` files are installed on system
+- if there are no ```tensorflow .so``` files, download and install those from [C API](https://www.tensorflow.org/install/lang_c)
+
 # testing:
 - download model to use ([tf2 detection model ZOO](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) by right click on model to download and then copy link and use that link in another tab)
 - download label data to use ([label data](https://github.com/tensorflow/models/blob/master/research/object_detection/data/mscoco_complete_label_map.pbtxt))
 - extract the downloaded model ```mscoco_complete_label_map.pbtxt``` to ```models``` directory  (in root of the repository)
 - copy ```mscoco_complete_label_map.pbtxt``` to ```models``` directory  (in root of the repository)
-- run the script ```interface_tf.py```
-
+- run ```cargo build``` or ```cargo build --release``` and run the binary in ```target/debug/interface_tf``` or ```target/release/interface_tf```

@@ -33,15 +33,15 @@ print("After, Backend used by matplotlib is: ", matplotlib.get_backend())
 # print matplotlib backends
 import matplotlib as m; print('I: {}\nN: {}'.format(m.rcsetup.interactive_bk,m.rcsetup.non_interactive_bk));
 
-# Root directory of the project
+# Root directory of the workspace(repo)
 ROOT_DIR = os.path.abspath("./")
-# model_path = ROOT_DIR + "/python/interface_tf/centernet_resnet50_v2_512x512_kpts_coco17_tpu-8/saved_model"
-# model_path = ROOT_DIR + "/python/interface_tf/centernet_resnet50_v2_512x512_coco17_tpu-8/saved_model"
+# model_path = ROOT_DIR + "/models/centernet_resnet50_v2_512x512_kpts_coco17_tpu-8/saved_model"
+# model_path = ROOT_DIR + "/pmodels/centernet_resnet50_v2_512x512_coco17_tpu-8/saved_model"
 
-model_path = ROOT_DIR + "/python/interface_tf/ssd_mobilenet_v2_320x320_coco17_tpu-8/saved_model"    # fastest evaluation
-# model_path = ROOT_DIR + "/python/interface_tf/centernet_hg104_512x512_kpts_coco17_tpu-32/saved_model"     # takes forever to load and evaluate image
+model_path = ROOT_DIR + "/models/ssd_mobilenet_v2_320x320_coco17_tpu-8/saved_model"    # fastest evaluation
+# model_path = ROOT_DIR + "/models/centernet_hg104_512x512_kpts_coco17_tpu-32/saved_model"     # takes forever to load and evaluate image
 
-labels_path = ROOT_DIR + "/python/interface_tf/mscoco_complete_label_map.pbtxt"
+labels_path = ROOT_DIR + "/models/mscoco_complete_label_map.pbtxt"
 
 #################################################################################################################
 

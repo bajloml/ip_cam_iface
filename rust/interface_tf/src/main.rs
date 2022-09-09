@@ -1,4 +1,4 @@
-use std::fs;
+use std::{env, fs};
 //use std::error::Error;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -17,7 +17,7 @@ use imageproc::drawing::draw_hollow_rect_mut;
 use imageproc::rect::Rect;
 use imageproc::drawing::draw_text_mut;
 
-use show_image::{ImageView, ImageInfo, create_window, run_context};
+use show_image::{create_window};
 
 use rusttype::{Font, Scale};
 
@@ -60,89 +60,84 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
     let mut labels: HashMap<u32, LabelVal> = HashMap::new();
 
     /* camera configuration and setup */
-    // {
-    //     /* start chromedriver */
-    //     let output = std::process::Command::new("chromedriver")
-    //                                             .output()
-    //                                             .expect("Failed to start process -> chromedrive");
+    //{
+        /* start chromedriver */
+        let _output = std::process::Command::new("chromedriver")
+                                                    .output()
+                                                    .expect("Failed to start process -> chromedrive");
 
-    //     let caps = DesiredCapabilities::chrome();
-    //     // let driver = WebDriver::new("http://localhost:9515", caps).await?;
-    //     let driver = WebDriver::new("http://localhost:9515", caps)?;
+        let caps = DesiredCapabilities::chrome();
+        let driver = WebDriver::new("http://localhost:9515", caps)?;
 
-    //     /* go to camera IP */
-    //     // driver.goto("http://192.168.8.155").await?
-    //     driver.get("http://192.168.8.155")?;
+        /* go to camera IP */
+        driver.get("http://192.168.8.155")?;
 
-    //     /* Login as user */
-    //     // let element = driver.find(By::XPath("//input[@value='Applet' ]")).await?;
-    //     let element = driver.find_element(By::XPath("//input[@value='Applet' ]"))?;
-    //     // element.click().await?;
-    //     element.click()?;display_name?;
-    //     // element.clear().await?;
-    //     element.clear()?;
-    //     // element.send_keys(_username).await?;
-    //     element.send_keys(_username)?;
+        /* Login as user */
+        let element = driver.find_element(By::XPath("//input[@value='Applet' ]"))?;
+        element.click()?;
 
-    //     // let element = driver.find(By::Name("PassWord")).await?;
-    //     let element = driver.find_element(By::Name("PassWord"))?;
-    //     // element.clear().await?;
-    //     element.clear()?;
-    //     // element.send_keys(_password).await?;
-    //     element.send_keys(_password)?;
+        let element = driver.find_element(By::Name("ID"))?;
+        element.clear()?;
+        element.send_keys(_username)?;
 
-    //     // let element = driver.find(By::XPath("/html/body/form/table/tbody/tr/td/table//tbody/tr/td/table/tbody/tr/td/p/font/input")).await?;
-    //     let element = driver.find_element(By::XPath("/html/body/form/table/tbody/tr/td/table//tbody/tr/td/table/tbody/tr/td/p/font/input"))?;
-    //     // element.click().await?;
-    //     element.click()?;
+        let element = driver.find_element(By::Name("PassWord"))?;
+        element.clear()?;
+        element.send_keys(_password)?;
 
-    //     /* go to camera settings */
-    //     // driver.goto("http://192.168.8.155/sysconfig.cgi").await?;
-    //     driver.get("http://192.168.8.155/sysconfig.cgi")?;
+        let element = driver.find_element(By::XPath("/html/body/form/table/tbody/tr/td/table//tbody/tr/td/table/tbody/tr/td/p/font/input"))?;
+        element.click()?;
 
-    //     /* enable image on local network */
-    //     // let element = driver.find(By::XPath("/html/body/form/table/tbody/tr/td/table/tbody/tr/td/div/table/tbody/tr/td/input[@name='access_image' and @value=1]")).await?;
-    //     let element = driver.find_element(By::XPath("/html/body/form/table/tbody/tr/td/table/tbody/tr/td/div/table/tbody/tr/td/input[@name='access_image' and @value=1]"))?;
-    //     // element.click().await?;
-    //     element.click()?;
+        /* go to camera settings */
+        driver.get("http://192.168.8.155/sysconfig.cgi")?;
 
-    //     /* set image name */
-    //     // let element = driver.find(By::Name("img_name_drt_acs")).await?;
-    //     let element = driver.find_element(By::Name("img_name_drt_acs"))?;
-    //     // element.clear().await?;
-    //     element.clear()?;
-    //     // element.send_keys(_img_name).await?;
-    //     element.send_keys(_img_name)?;
+        /* enable image on local network */
+        let element = driver.find_element(By::XPath("/html/body/form/table/tbody/tr/td/table/tbody/tr/td/div/table/tbody/tr/td/input[@name='access_image' and @value=1]"))?;
+        element.click()?;
 
-    //     /* submit changes */
-    //     // let element = driver.find(By::XPath("/html/body/form/table/tbody/tr/td/table/tbody/tr/td/div/input[@value='Submit']")).await?;
-    //     let element = driver.find_element(By::XPath("/html/body/form/table/tbody/tr/td/table/tbody/tr/td/div/input[@value='Submit']"))?;
-    //     // element.click().await?;
-    //     element.click()?;
+        /* set image name */
+        let element = driver.find_element(By::Name("img_name_drt_acs"))?;
+        element.clear()?;
+        element.send_keys(_img_name)?;
 
-    //     // Always explicitly close the browser.
-    //     // driver.quit().await?;
-    //     // driver.quit();
-    //     // driver.close()?;
-    //     match driver.close(){
-    //         Ok(res) => println!("Camera configuration is done: {:?}", res),
-    //         // Err(error) => panic!("Problem with closing driver: {:?}", error),
-    //         Err(error) => println!("Problem with closing driver: {:?}", error),
-    //     };
-    // }
+        /* submit changes */
+        let element = driver.find_element(By::XPath("/html/body/form/table/tbody/tr/td/table/tbody/tr/td/div/input[@value='Submit']"))?;
+        element.click()?;
+
+        // Always explicitly close the browser.
+        // driver.quit();
+        // match driver.quit(){
+        //     Ok(res) => println!("Camera configuration is done: {:?}", res),
+        //     Err(error) => panic!("Problem with closing driver: {:?}", error),
+        // };
+
+        // driver.close()?;
+        match driver.close(){
+            Ok(res) => println!("Camera configuration is done: {:?}", res),
+            Err(error) => panic!("Problem with closing driver: {:?}", error),
+            // Err(error) => println!("Problem with closing driver: {:?}", error),
+        };
+    //}
 
     /* create a client */
     // let client = reqwest::Client::builder().build()?;
     let client = reqwest::blocking::Client::builder().build()?;
     let mut counter = 0 as u32;
 
+    /* get labels and model paths */
+    let current_dir = env::current_dir()?;
+    let path_to_models_dir = current_dir.parent().unwrap().parent().unwrap().parent().unwrap().parent().unwrap();
+
+    let mut path_to_model = PathBuf::from(path_to_models_dir);
+    path_to_model.push(model_path);
+
+    let mut path_to_labels = PathBuf::from(path_to_models_dir);
+    path_to_labels.push(label_path);
+
     /* get labels str */
-    let mut labels_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    labels_path.push(label_path);
-    let labels_str = fs::read_to_string(labels_path.display().to_string());
+    let labels_str = fs::read_to_string(path_to_labels.display().to_string());
     match labels_str{
-        Ok(_) => println!("Labels ({:?}) found", labels_path.as_os_str()),
-        Err(error) => panic!("Problem with opening {:?}: {:?}", labels_path.as_os_str(), error),
+        Ok(_) => println!("Labels ({:?}) found", path_to_labels.as_os_str()),
+        Err(error) => panic!("Problem with opening {:?}: {:?}", path_to_labels.as_os_str(), error),
     };
 
     /* get label data into a hash map */
@@ -151,7 +146,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
     let label_field_id = "id";
     let label_field_display_name = "display_name";
     print!("Loading labels... ");
-    while (labels_str.len() > 1) {
+    while labels_str.len() > 1 {
 
         /* get label item string boundaries */
         let label_description_begin = labels_str.find('{').unwrap();
@@ -194,14 +189,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
     println!("loaded!");
 
     /* Load the model.*/
-    let mut workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    workspace.push(model_path);
-    let model_path = workspace.display().to_string();
-    print!("Loading a model: {}", model_path);
-    
+    print!("Loading a model: {}", path_to_model.to_str().unwrap());
     let model_loading_time = std::time::Instant::now();
     let mut graph = Graph::new();
-    let bundle = SavedModelBundle::load(&SessionOptions::new(), &["serve"], &mut graph, model_path)?;
+    let bundle = SavedModelBundle::load(&SessionOptions::new(), &["serve"], &mut graph, path_to_model)?;
     let session = &bundle.session;
     println!(" loaded in {:?}", model_loading_time.elapsed());
 
@@ -217,6 +208,9 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
     let output_info_boxes = signature.get_output("detection_boxes")?;
     let output_info_classes = signature.get_output("detection_classes")?;
     let output_info_scores = signature.get_output("detection_scores")?;
+
+    // Create a window with default options and display the image.
+    let window = create_window("image with detections", Default::default())?;
 
     loop{
         /* measure time */
@@ -313,26 +307,18 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
             }
         }
 
-        //Once we've modified the image we save it in the output location.
+        // Save the image
         img_out.save("detections.jpeg")?;
 
+        let img = show_image::Image::from(img_out);
+        let img_out_view = img.as_image_view().unwrap();
+
         // Create a window with default options and display the image.
-        let img_out_view = ImageView::new(ImageInfo::rgb8(model_image_dim, model_image_dim), img_out.as_raw().as_slice());
-        //let test = img_out.pixels()
-        let window = create_window("image with detections", Default::default())?;
         window.set_image("image-001", img_out_view)?;
-
-
-
-
-
 
         counter += 1;
         println!("counter = {}, elapsed time = {:?}", counter, detection_time.elapsed());
-
     }
-
-    println!("finished");
 
     Ok(())
 }

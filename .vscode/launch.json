@@ -36,7 +36,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/rust/interface/target/debug/interface",
-            "cwd": "${workspaceFolder}/rust/interface/",
+            "cwd": "${workspaceFolder}/rust/interface/target/debug/",
             // "cargo": {
             //     "args": [
             //         "build",
@@ -60,7 +60,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/rust/interface_tf/target/debug/interface_tf",
-            "cwd": "${workspaceFolder}/rust/interface_tf/",
+            "cwd": "${workspaceFolder}/rust/interface_tf/target/debug/",
             // "cargo": {
             //     "args": [
             //         "build",

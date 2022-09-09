@@ -1,16 +1,15 @@
 use std::fs;
-use tensorflow::eager::raw_ops::random_shuffle_queue;
+//use std::error::Error;
+use std::collections::HashMap;
+use std::path::PathBuf;
+//use std::result::Result;
+
 use thirtyfour_sync::prelude::*;
+
 use reqwest;
 
-use rand_distr::{Normal, Distribution};
-use rand::{Rng,SeedableRng};
+use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
-
-// use opencv::{ self as cv, prelude::*};
-// use opencv::{highgui, imgproc};
-// use opencv::core::{Scalar, Vec4b};
-// use opencv::prelude::*;
 
 use image::*;
 
@@ -22,37 +21,22 @@ use show_image::{ImageView, ImageInfo, create_window, run_context};
 
 use rusttype::{Font, Scale};
 
-use std::error::Error;
-use std::collections::HashMap;
-
-use std::path::PathBuf;
-use std::result::Result;
-use tensorflow::Code;
+//use tensorflow::Code;
 use tensorflow::Graph;
 use tensorflow::SavedModelBundle;
 use tensorflow::SessionOptions;
 use tensorflow::SessionRunArgs;
-use tensorflow::Status;
+//use tensorflow::Status;
 use tensorflow::Tensor;
 use tensorflow::DEFAULT_SERVING_SIGNATURE_DEF_KEY;
 
 use tensorflow::eager::{self, raw_ops, ToTensorHandle};
 
-// detection struct with key elements to draw on image
-pub struct Detection {
-    pub x1: f32,
-    pub y1: f32,
-    pub x2: f32,
-    pub y2: f32,
-    pub score: f32,
-    pub class: f32,
-}
-
 pub struct LabelVal {
     pub name: String,
     pub color: Rgba<u8>,
 }
-
+#[show_image::main]
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
 
     // /* login auth*/
@@ -331,9 +315,6 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>>{
 
         //Once we've modified the image we save it in the output location.
         img_out.save("detections.jpeg")?;
-
-        //let test = img_out.as_raw().as_slice();
-
 
         // Create a window with default options and display the image.
         let img_out_view = ImageView::new(ImageInfo::rgb8(model_image_dim, model_image_dim), img_out.as_raw().as_slice());
